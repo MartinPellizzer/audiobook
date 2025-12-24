@@ -1,7 +1,9 @@
 
 vault_folderpath = f'/home/ubuntu/vault'
+VAULT_FOLDERPATH = f'/home/ubuntu/vault'
 vault_tmp_folderpath = f'/home/ubuntu/vault-tmp'
 database_folderpath = f'{vault_folderpath}/terrawhisper/database'
+DATABASE_FOLDERPATH = f'{vault_folderpath}/terrawhisper/database'
 assets_folderpath = f'{database_folderpath}/assets'
 website_folderpath = f'{vault_folderpath}/terrawhisper/website/terrawhisper'
 
@@ -13,3 +15,6 @@ checkpoint_filepath = f'{vault_tmp_folderpath}/stable-diffusion/juggernautXL_rag
 color_carbon_powder = '#101211'
 color_carbon_ash = '#1c1f1e'
 color_linen = '#f5f1eb'
+
+base_folderpath = 'video-0034'
+

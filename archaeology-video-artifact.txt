@@ -1,0 +1,10 @@
+**Description of the Artifact (for narrative and conceptual clarity):**
+
+This artifact is a 3,000-year-old stone statue of a goddess, discovered in the depths of the Amazon jungle. The statue is carved from a single, massive block of smooth, polished stone, suggesting advanced and precise sculpting techniques. Its height is imposing, with a serene and enigmatic expression, the eyes appearing almost too lifelike, as if watching the present moment. The figure stands with arms raised in a gesture of blessing or protection, and the hands are finely detailed, with fingers delicately elongated and symmetrical. The craftsmanship is remarkably advanced for its age, with smooth surfaces and intricate details that defy the known technological capabilities of ancient Amazonian cultures. The statue appears untouched by time, as if it has been hidden away from the world for millennia. The mystery deepens with the realization that no known civilization existed in the region at that time, raising questions about its origin, purpose, and the hands that created it.
+
+---
+
+**AI Image Prompt (for photorealistic image generation):**
+
+**Prompt:**  
+"Photorealistic image of a 3,000-year-old stone statue of a serene, enigmatic goddess, carved from a single block of smooth, polished stone, standing tall in the Amazon jungle. The statue has lifelike eyes with a deep, mysterious gaze, hands raised in a peaceful, blessing-like gesture, with intricately detailed fingers. The stone is smooth and finely worked, showing advanced craftsmanship for its age. The statue is set in a dense, overgrown jungle clearing, with ancient roots and foliage surrounding it. The atmosphere is mysterious, slightly eerie, with soft natural lighting filtering through the canopy, casting long shadows. The scene feels untouched by modern hands, as if the statue has been hidden for millennia, exuding a sense of wonder, ambiguity, and the feeling that it shouldn’t exist. Style: photorealistic, high detail, cinematic lighting, subtle eerie ambiance, soft dark humor in the untouched nature of the artifact."

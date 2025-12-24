@@ -1,0 +1,7 @@
+Write 200 words about the following topic:
+
+[topic]
+
+Write short paragraphs.
+Separate each paragraph with a new line.
+Start the reply with the following words: "The best way to use ".

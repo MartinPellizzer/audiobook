@@ -1,0 +1,54 @@
+You are the worlds best youtube video writer expert.
+
+I want you to write an outline for a 5-minute youtube video with the following title, sections, and guidelines.
+
+TITLE:
+This One Tool Made My Herbal Tea Taste 10x Better. I Had No Idea!
+
+SECTIONS:
+- HOOK [0-15 seconds]
+- HISTORICAL ANECDOTE/STORY, based on a real event, including people, location, and period [15-60 seconds]. 
+- BODY of the video (split it into 3 main section, each one about 1 minute), These sections are what, why, and how to. For the how to, give only one way to do it. Describe it in actionable and specific details.
+- CONCLUSION (about one minute) (drive the point home with the video) 
+- CTA (about 30 seconds) (the CTA must be about asking them a relevant question to make them comment, don't tell you're going to try what they suggest in the comments, instead tell that his can help/inspire others).
+
+GUIDELINES:
+Don't reveal "the what" in the hook.
+The hook and the anecdote goal is to build curiosity.
+Reveal the "the what" in the last sentence of the anecdote, as a way to transition in the next section.
+
+
+
+
+
+Write the full script.
+
+Write it using long sentences, long enough to cover about 10-seconds of narration, because I want to be able to narrate them in documentary style.
+Separate each sentence in a new line.
+Each sentence is a scene of the video.
+
+Also, I need to create an image with stable diffusion in each scene, so give me prompt for stable diffusion before each sentence [in brackets] where you describe the scene to generate the image.
+Each image prompt must start with the words "a watercolor painting of " and include a main subject and a description of the background scenery based on the current scene (sentence), using less than 10 words. 
+For the image prompts, include only tags that are well recognized by stable diffusion.
+Never include tags that will generate people or body parts like hands.
+
+Example of image prompt structures you can take inspiration from are:
+- A watercolor painting of melissa officinalis herb in a Italian garden
+- A watercolor painting of a cup of tea in a cottage
+
+Reply in 1000 words, only with the content asked, without titles.
+
+
+
+
+
+
+
+give me a list of ideas for a text overlay i can put in the thumbnail of this video. each idea must be 5 words or less. the ideas must clickbait an curiosity sparking.
+
+
+
+write a description for this video. make it seo optimized. end with the question for comment.
+
+
+now give me a list of tags for seo purposes, separated by commas. prioritize by search volume. use less than 500 characters.

@@ -27,7 +27,7 @@ dst_folderpath = f'{course_folderpath}/dst'
 dst_video_clips_folderpath = f'{dst_folderpath}/video-clips'
 
 def slide_footer_draw(draw, color):
-    line = f'Tincture Making System | Copyright TerraWhisper.com'
+    line = f'{course_name} | Copyright TerraWhisper.com'
     font_size = 16
     font_family, font_weight = 'Lato', 'Regular'
     font_path = f"{g.assets_folderpath}/fonts/{font_family}/{font_family}-{font_weight}.ttf"
@@ -44,7 +44,7 @@ def slide_footer_draw(draw, color):
     draw.text((slide_w - line_w - 32, slide_h - font_size - 16), line, color, font=font)
     draw.rectangle(((0, slide_h - font_size - 16 - 16), (slide_w, slide_h - font_size - 16 - 16)), fill=color)
 
-def slide_intro_gen(style, slide_num=-1):
+def slide_intro_gen(style, slide_num=-1, course_name=''):
     if style == 'default':
         bg_color = g.color_linen
         color = g.color_carbon_powder
@@ -54,8 +54,8 @@ def slide_intro_gen(style, slide_num=-1):
     img = Image.new('RGB', (slide_w, slide_h), color=bg_color)
     draw = ImageDraw.Draw(img)
     ### title
-    line = 'SafeDrop System'
-    font_size = 128
+    line = course_name
+    font_size = 96
     font_family, font_weight = 'Lato', 'Bold'
     font_path = f"{g.assets_folderpath}/fonts/{font_family}/{font_family}-{font_weight}.ttf"
     font = ImageFont.truetype(font_path, font_size)
@@ -82,9 +82,55 @@ def slide_intro_gen(style, slide_num=-1):
     ### slide footer
     slide_footer_draw(draw, color)
     ### save
+    i = slide_num
+    i_str = ''
+    if i >= 10000: i_str = f'{i}'
+    elif i >= 1000: i_str = f'0{i}'
+    elif i >= 100: i_str = f'00{i}'
+    elif i >= 10: i_str = f'000{i}'
+    else: i_str = f'0000{i}'
+    img.save(f'{tmp_slides_folderpath}/{src_module_foldername}/{src_lesson_foldername}/{i_str}.png')
+
+def slide_general(style, slide_num=-1):
+    ### style
+    if style == 'default':
+        bg_color = g.color_linen
+        color = g.color_carbon_powder
+    else:
+        bg_color = g.color_carbon_powder
+        color = g.color_linen
+    ### get content from script
+    with open(script_filepath) as f: script = f.read()
+    script = script.replace('*', '').strip()
+    script = script.replace('#', '').strip()
+    lines = [x.strip() for x in script.split('\n') if x.strip() != '']
+    title = ''
+    for line in lines:
+        if line.startswith('[step_2_title] '): 
+            line = line.replace('[step_2_title] ', '').strip()
+            title = line
+        elif line.startswith('[step_2_content] '): 
+            line = line.replace('[step_2_content] ', '').strip()
+            content = line
+    ### img
+    img = Image.new('RGB', (slide_w, slide_h), color=bg_color)
+    draw = ImageDraw.Draw(img)
+    ### title
+    line = title
+    font_size = 24
+    font_family, font_weight = 'Lato', 'Regular'
+    font_path = f"{g.assets_folderpath}/fonts/{font_family}/{font_family}-{font_weight}.ttf"
+    font = ImageFont.truetype(font_path, font_size)
+    _, _, line_w, line_h = font.getbbox(line)
+    draw.text((slide_w//2 - line_w//2, 80), line, color, font=font)
+    ### content
+    draw_slide_content(content, draw, color)
+    ### slide footer
+    slide_footer_draw(draw, color)
+    ###
     if slide_num == -1:
-        img.save(f'{tmp_slides_folderpath}/00000.png')
-        img.save(f'{tmp_slides_folderpath}/{src_module_foldername}/{src_lesson_foldername}/00000.png')
+        img.save(f'{tmp_slides_folderpath}/00006.png')
+        img.save(f'{tmp_slides_folderpath}/{src_module_foldername}/{src_lesson_foldername}/00006.png')
     else:
         i = slide_num
         i_str = ''
@@ -95,6 +141,7 @@ def slide_intro_gen(style, slide_num=-1):
         else: i_str = f'0000{i}'
         img.save(f'{tmp_slides_folderpath}/{i_str}.png')
         img.save(f'{tmp_slides_folderpath}/{src_module_foldername}/{src_lesson_foldername}/{i_str}.png')
+
 
 def slide_why_gen(style):
     if style == 'default':
@@ -794,44 +841,80 @@ def slides_gen():
     slide_num += 1
     # quit()
 
-def create_slides_general():
+def slides_base_general(section_i, section):
+    section = section.replace('*', '').strip()
+    section = section.replace('#', '').strip()
+    lines = [x.strip() for x in section.split('\n') if x.strip() != '']
+    heading = ''
+    content = ''
+    for line in lines:
+        if line.startswith('[heading] '): 
+            line = line.replace('[heading] ', '').strip()
+            heading = line
+        elif line.startswith('[content] '): 
+            line = line.replace('[content] ', '').strip()
+            content = line
+    print(f'HEADING: {heading}')
+    print(f'CONTENT: {content}')
+    ### img
     color = g.color_linen
     bg_color = g.color_carbon_powder
-    ### clear
-    try: os.mkdir(tmp_slides_folderpath)
+    img = Image.new('RGB', (slide_w, slide_h), color=bg_color)
+    draw = ImageDraw.Draw(img)
+    ### heading
+    line = heading
+    font_size = 24
+    font_family, font_weight = 'Lato', 'Regular'
+    font_path = f"{g.assets_folderpath}/fonts/{font_family}/{font_family}-{font_weight}.ttf"
+    font = ImageFont.truetype(font_path, font_size)
+    _, _, line_w, line_h = font.getbbox(line)
+    draw.text((slide_w//2 - line_w//2, 80), line, color, font=font)
+    ### content
+    draw_slide_content(content, draw, color)
+    ### slide footer
+    slide_footer_draw(draw, color)
+    ###
+    i = section_i
+    i_str = ''
+    if i >= 10000: i_str = f'{i}'
+    elif i >= 1000: i_str = f'0{i}'
+    elif i >= 100: i_str = f'00{i}'
+    elif i >= 10: i_str = f'000{i}'
+    else: i_str = f'0000{i}'
+    img.save(f'{tmp_slides_folderpath}/{src_module_foldername}/{src_lesson_foldername}/{i_str}.png')
+
+def create_slides_general(regen=False):
+    color = g.color_linen
+    bg_color = g.color_carbon_powder
+    ### clean
+    if regen: 
+        try: shutil.rmtree(f'{tmp_slides_folderpath}')
+        except: pass
+    try: os.mkdir(f'{tmp_slides_folderpath}')
     except: pass
     try: os.mkdir(f'{tmp_slides_folderpath}/{src_module_foldername}')
     except: pass
     try: os.mkdir(f'{tmp_slides_folderpath}/{src_module_foldername}/{src_lesson_foldername}')
     except: pass
-    ### placeholder slides
     with open(script_filepath) as f: script = f.read()
-    scripts_split = [x.strip() for x in script.split('---')]
-    scripts_num = len(scripts_split)
-    for i in range(scripts_num):
-        i_str = ''
-        if i >= 10000: i_str = f'{i}'
-        elif i >= 1000: i_str = f'0{i}'
-        elif i >= 100: i_str = f'00{i}'
-        elif i >= 10: i_str = f'000{i}'
-        else: i_str = f'0000{i}'
-        img = Image.new('RGB', (slide_w, slide_h), color=bg_color)
-        img.save(f'{tmp_slides_folderpath}/{i_str}.png')
-    ### copy src slides
-    for src_slide_filepath in src_slides_filepaths:
-        src_slide_filename = src_slide_filepath.split('/')[-1]
-        tmp_slide_filepath = f'{tmp_slides_folderpath}/{src_slide_filename}'
-        shutil.copy2(src_slide_filepath, tmp_slide_filepath)
+    sections = [x.strip() for x in script.split('---')]
+    scripts_num = len(sections)
     ###
-    slide_num = 0
-    slide_intro_gen(style='default', slide_num=slide_num)
-    slide_num += 1
+    slide_i = 0
+    ###
+    for section in sections:
+        if slide_i == 0:
+            slide_intro_gen(style='default', slide_num=slide_i, course_name=course_name)
+        else:
+            slides_base_general(slide_i, section)
+        slide_i += 1
 
-def tmp_script_split_gen():
+def tmp_script_split_gen(regen=False):
     tmp_script_split_folderpath = f'{tmp_folderpath}/script-split'
     ### clean
-    try: shutil.rmtree(tmp_script_split_folderpath)
-    except: pass
+    if regen: 
+        try: shutil.rmtree(tmp_script_split_folderpath)
+        except: pass
     try: os.mkdir(tmp_script_split_folderpath)
     except: pass
     ### gen
@@ -875,6 +958,8 @@ def tmp_script_split_gen():
         elif line.startswith('[case_study_4_content] '): continue
         elif line.startswith('[case_study_5_title] '): continue
         elif line.startswith('[case_study_5_content] '): continue
+        elif line.startswith('[heading] '): continue
+        elif line.startswith('[content] '): continue
         lines.append(line)
     script = '\n\n'.join(lines)
     scripts_split = [x.strip() for x in script.split('---')]
@@ -888,12 +973,13 @@ def tmp_script_split_gen():
         tmp_script_split_filepath = f'{tmp_script_split_folderpath}/{i_str}.txt'
         with open(tmp_script_split_filepath, 'w') as f: f.write(script_split)
 
-def tmp_script_split_clips_gen():
+def tmp_script_split_clips_gen(regen=False):
     tmp_script_split_folderpath = f'{tmp_folderpath}/script-split'
     tmp_script_split_clips_folderpath = f'{tmp_folderpath}/script-split-clips'
     ### clean
-    try: shutil.rmtree(tmp_script_split_clips_folderpath)
-    except: pass
+    if regen: 
+        try: shutil.rmtree(tmp_script_split_clips_folderpath)
+        except: pass
     try: os.mkdir(tmp_script_split_clips_folderpath)
     except: pass
     ### gen
@@ -926,14 +1012,15 @@ def tmp_script_split_clips_gen():
             sf.write(f'{tmp_script_split_clips_folderpath}/{i_str}/{j_str}.wav', audio, 24000)
             j += 1
 
-def tmp_clips_gen():
+def tmp_audio_clips_gen(regen=False):
     import subprocess
     tmp_concat_filepath = f'{tmp_folderpath}/concat.txt'
     tmp_script_split_clips_folderpath = f'{tmp_folderpath}/script-split-clips'
     tmp_clips_folderpath = f'{tmp_folderpath}/clips'
     ### clean
-    try: shutil.rmtree(tmp_clips_folderpath)
-    except: pass
+    if regen: 
+        try: shutil.rmtree(tmp_clips_folderpath)
+        except: pass
     try: os.mkdir(tmp_clips_folderpath)
     except: pass
     ### gen
@@ -967,11 +1054,12 @@ def tmp_clips_gen():
             f'-y',
         ])
 
-def tmp_video_clips_gen():
+def tmp_video_clips_gen(regen=False):
     import subprocess
     ### clean
-    try: shutil.rmtree(tmp_video_clips_folderpath)
-    except: pass
+    if regen:
+        try: shutil.rmtree(tmp_video_clips_folderpath)
+        except: pass
     try: os.mkdir(tmp_video_clips_folderpath)
     except: pass
     ### gen
@@ -984,7 +1072,7 @@ def tmp_video_clips_gen():
         elif i >= 100: i_str = f'00{i}'
         elif i >= 10: i_str = f'000{i}'
         else: i_str = f'0000{i}'
-        slide_filepath = f'{tmp_slides_folderpath}/{i_str}.png'
+        slide_filepath = f'{tmp_slides_folderpath}/{src_module_foldername}/{src_lesson_foldername}/{i_str}.png'
         video_filepath = f'{tmp_video_clips_folderpath}/{i_str}.mp4'
         subprocess.run([
             f'ffmpeg',
@@ -1001,14 +1089,15 @@ def tmp_video_clips_gen():
             f'-y',
         ])
 
-def dst_video_clip_gen():
+def dst_video_clip_gen(regen=False):
     import subprocess
     tmp_concat_filepath = f'{tmp_folderpath}/concat.txt'
     tmp_video_clips_folderpath = f'{tmp_folderpath}/video-clips'
     dst_lesson_folderpath = f'{dst_module_folderpath}/{src_lesson_foldername}'
     ### clean
-    try: os.mkdir(dst_video_clips_folderpath)
-    except: pass
+    if regen:
+        try: os.mkdir(dst_video_clips_folderpath)
+        except: pass
     try: os.mkdir(dst_module_folderpath)
     except: pass
     # try: os.mkdir(dst_lesson_folderpath)
@@ -1033,8 +1122,78 @@ def dst_video_clip_gen():
             f'-y', 
         ])
 
-target_module = 0
-target_lesson = 2
+def demo():
+    course_filename = 'make-your-first-tincture'
+    course_folderpath = f'/home/ubuntu/vault/terrawhisper/database/shop/courses/{course_filename}'
+    src_folderpath = f'{course_folderpath}/src'
+    tmp_folderpath = f'{course_folderpath}/tmp'
+    dst_folderpath = f'{course_folderpath}/dst'
+    for script_filename in sorted(os.listdir(src_folderpath)):
+        script_filepath = f'{src_folderpath}/{script_filename}'
+        if 0:
+            ### tmp clips
+            for filename in os.listdir(tmp_folderpath):
+                os.remove(f'{tmp_folderpath}/{filename}')
+            with open(script_filepath) as f: text = f.read()
+            text = polish.text_format(text)
+            pipeline = KPipeline(lang_code='a')
+            generator = pipeline(text, voice='af_heart')
+            j = 0
+            for (gs, ps, audio) in generator:
+                print(j, gs, ps)
+                j_str = ''
+                if j >= 10000: j_str = f'{j}'
+                elif j >= 1000: j_str = f'0{j}'
+                elif j >= 100: j_str = f'00{j}'
+                elif j >= 10: j_str = f'000{j}'
+                else: j_str = f'0000{j}'
+                sf.write(f'{tmp_folderpath}/{j_str}.wav', audio, 24000)
+                j += 1
+        if 0:
+            ### audio clips
+            import subprocess
+            audio_clips_filenames = [f'{tmp_folderpath}/{filename}' for filename in sorted(os.listdir(tmp_folderpath))]
+            with open(f'{tmp_folderpath}/concat.txt', 'w') as f:
+                for filepath in audio_clips_filenames:
+                    f.write(f"file '{filepath}'\n")
+            script_filename_base = script_filename.split('.')[0]
+            dst_clip_filepath = f'{dst_folderpath}/{script_filename_base}.wav'
+            subprocess.run([
+                f'ffmpeg',
+                f'-f', f'concat',
+                f'-safe', f'0',
+                f'-i', f'{tmp_folderpath}/concat.txt', 
+                f'-acodec', f'pcm_s16le', 
+                f'{dst_clip_filepath}', 
+                f'-y',
+            ])
+    ### full audio
+    import subprocess
+    audio_clips_folderpath = f'{dst_folderpath}'
+    audio_output_filepath = f'{course_folderpath}/course-audio.wav'
+    tmp_concat_filepath = f'{tmp_folderpath}/concat.txt'
+    with open(tmp_concat_filepath, 'w') as f:
+        for audio_clip_filename in sorted(os.listdir(audio_clips_folderpath)):
+            audio_clip_filepath = f'{audio_clips_folderpath}/{audio_clip_filename}'
+            f.write(f"file '{audio_clip_filepath}'\n")
+    subprocess.run([
+        f'ffmpeg',
+        f'-f', f'concat',
+        f'-safe', f'0',
+        f'-i', f'{tmp_concat_filepath}',
+        f'-c', f'copy',
+        f'{audio_output_filepath}',
+        f'-y', 
+    ])
+
+
+# demo()
+# quit()
+
+
+course_name = 'Healing Drops System'
+target_module = 4
+target_lesson = 0
 ###
 for module_i, src_module_foldername in enumerate(src_modules_foldernames):
     src_module_folderpath = f'{src_folderpath}/{src_module_foldername}'
@@ -1062,13 +1221,13 @@ for module_i, src_module_foldername in enumerate(src_modules_foldernames):
         except: pass
         os.mkdir(tmp_folderpath)
         ###
-        if target_module == 0 and target_lesson == 0:
-            create_slides_general()
-            tmp_script_split_gen()
-            tmp_script_split_clips_gen()
-            tmp_clips_gen()
-            tmp_video_clips_gen()
-            dst_video_clip_gen()
+        # if target_module == 0 and target_lesson == 0:
+            # create_slides_general()
+            # tmp_script_split_gen()
+            # tmp_script_split_clips_gen()
+            # tmp_clips_gen()
+            # tmp_video_clips_gen()
+            # dst_video_clip_gen()
         if target_module == 0 and target_lesson == 1:
             create_slides_general()
             tmp_script_split_gen()
@@ -1084,10 +1243,11 @@ for module_i, src_module_foldername in enumerate(src_modules_foldernames):
             tmp_video_clips_gen()
             dst_video_clip_gen()
         else:
-            slides_gen()
-            tmp_script_split_gen()
-            tmp_script_split_clips_gen()
-            tmp_clips_gen()
-            tmp_video_clips_gen()
-            dst_video_clip_gen()
+            pass
+            create_slides_general(regen=True)
+            tmp_script_split_gen(regen=True)
+            tmp_script_split_clips_gen(regen=True)
+            tmp_audio_clips_gen(regen=True)
+            tmp_video_clips_gen(regen=True)
+            dst_video_clip_gen(regen=True)
 

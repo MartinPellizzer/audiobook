@@ -76,6 +76,7 @@ def book_pdf(book_filename):
 
 book_filename = 'socratic-logic.pdf'
 book_filename = '48-laws-of-power.pdf'
+book_filename = 'presuasion.pdf'
 book_pdf(book_filename)
 
 
