@@ -1,17 +1,19 @@
 import os
 import re
 import sys
+import time
 import random
 import shutil
 
 from PIL import Image, ImageFont, ImageDraw, ImageColor, ImageOps
-
 from lib import g
 from lib import llm
 from lib import media
 from lib import zimage
 
-hub_folderpath = f'psychology'
+hub_folderpath = f'/home/ubuntu/vault/audiobook/psychology'
+
+with open(f'{hub_folderpath}/ideas.txt') as f: ideas = f.read().strip().split('\n')
 
 def audio_clips_gen(regen=False):
     from kokoro import KPipeline
@@ -25,7 +27,7 @@ def audio_clips_gen(regen=False):
         elif idea_i >= 100: i_str = f'0{idea_i}'
         elif idea_i >= 10: i_str = f'00{idea_i}'
         else: i_str = f'000{idea_i}'
-        idea_slug = idea.strip().lower().replace(' ', '-')
+        idea_slug = idea.strip().lower().replace(' ', '-').replace("'", '')
         video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
         final_filepath = f'{video_folderpath}/tmp/texts/final.txt'
         print(final_filepath)
@@ -72,7 +74,7 @@ def video_clips_gen(regen=False):
         elif idea_i >= 100: i_str = f'0{idea_i}'
         elif idea_i >= 10: i_str = f'00{idea_i}'
         else: i_str = f'000{idea_i}'
-        idea_slug = idea.strip().lower().replace(' ', '-')
+        idea_slug = idea.strip().lower().replace(' ', '-').replace("'", '')
         video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
         final_filepath = f'{video_folderpath}/tmp/texts/final.txt'
         print(final_filepath)
@@ -121,10 +123,11 @@ def video_final_gen(regen=False):
         elif idea_i >= 100: i_str = f'0{idea_i}'
         elif idea_i >= 10: i_str = f'00{idea_i}'
         else: i_str = f'000{idea_i}'
-        idea_slug = idea.strip().lower().replace(' ', '-')
+        idea_slug = idea.strip().lower().replace(' ', '-').replace("'", '')
         video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
         final_filepath = f'{video_folderpath}/tmp/texts/final.txt'
         print(final_filepath)
+        ###
         if not os.path.exists(f'{video_folderpath}'):
             os.makedirs(f'{video_folderpath}')
         if not os.path.exists(f'{video_folderpath}/tmp'):
@@ -135,13 +138,11 @@ def video_final_gen(regen=False):
             for filename in os.listdir(f'{video_folderpath}/tmp/video-final'):
                 if filename.endswith('.mp4'):
                     os.remove(f'{video_folderpath}/tmp/video-final/{filename}')
-        else:
-            return
         video_clips_filenames = sorted(os.listdir(f'{video_folderpath}/tmp/video-clips'))
         concat_filepath = f'{video_folderpath}/tmp/video-concat.txt'
         with open(concat_filepath, 'w') as f:
             for i, video_clip_filename in enumerate(video_clips_filenames):
-                video_clip_filepath = f'/home/ubuntu/proj/audiobook/{video_folderpath}/tmp/video-clips/{video_clip_filename}'
+                video_clip_filepath = f'{video_folderpath}/tmp/video-clips/{video_clip_filename}'
                 f.write(f"file '{video_clip_filepath}'\n")
         with open(f'{video_folderpath}/tmp/video-final/title.txt') as f: title = f.read().strip().lower().replace(' ', '-')
         video_final_filepath = f'{video_folderpath}/tmp/video-final/{title}.mp4'
@@ -184,14 +185,10 @@ def init():
         elif i >= 100: i_str = f'0{i}'
         elif i >= 10: i_str = f'00{i}'
         else: i_str = f'000{i}'
-        idea_slug = idea.strip().lower().replace(' ', '-')
+        idea_slug = idea.strip().lower().replace(' ', '-').replace("'", '')
         video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
         final_filepath = f'{video_folderpath}/tmp/texts/final.txt'
         try: os.makedirs(f'{video_folderpath}')
-        except: pass
-        try: os.makedirs(f'{video_folderpath}/images')
-        except: pass
-        try: os.makedirs(f'{video_folderpath}/images-formatted')
         except: pass
         try: os.makedirs(f'{video_folderpath}/tmp')
         except: pass
@@ -237,7 +234,7 @@ def images_gen(regen=False):
         elif idea_i >= 100: i_str = f'0{idea_i}'
         elif idea_i >= 10: i_str = f'00{idea_i}'
         else: i_str = f'000{idea_i}'
-        idea_slug = idea.strip().lower().replace(' ', '-')
+        idea_slug = idea.strip().lower().replace(' ', '-').replace("'", '')
         video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
         final_filepath = f'{video_folderpath}/tmp/texts/final.txt'
         print(final_filepath)
@@ -276,6 +273,7 @@ def images_gen(regen=False):
             print()
             image = zimage.image_create(output_filepath=output_filepath, prompt=prompt, width=1024, height=1024, seed=-1)
             print(image_lines)
+            print(output_filepath)
         # return
 
 def text_to_lines(text, font, max_w):
@@ -303,7 +301,7 @@ def images_formatted_gen(regen=False):
         elif idea_i >= 100: i_str = f'0{idea_i}'
         elif idea_i >= 10: i_str = f'00{idea_i}'
         else: i_str = f'000{idea_i}'
-        idea_slug = idea.strip().lower().replace(' ', '-')
+        idea_slug = idea.strip().lower().replace(' ', '-').replace("'", '')
         video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
         final_filepath = f'{video_folderpath}/tmp/texts/final.txt'
         print(final_filepath)
@@ -322,14 +320,14 @@ def images_formatted_gen(regen=False):
             elif image_line_i >= 100: i_str = f'0{image_line_i}'
             elif image_line_i >= 10: i_str = f'00{image_line_i}'
             else: i_str = f'000{image_line_i}'
-
             img = Image.new(mode="RGB", size=(1080, 1920), color='#ffffff')
             draw = ImageDraw.Draw(img)
             img_0000 = Image.open(f'{video_folderpath}/tmp/images/img-{i_str}.jpg')
             img_0000 = media.resize(img_0000, 1080, 1080)
             img.paste(img_0000, (0, int(1920*0.66)-(1080//2)))
-
             caption_content = text_lines[image_line_i]
+            caption_content = caption_content.replace('—', ', ')
+            caption_content = caption_content.replace('’', "'")
             font_size = 80
             font_family, font_weight = 'Lato', 'Bold'
             font_path = f"{g.VAULT_FOLDERPATH}/terrawhisper/database/assets/fonts/{font_family}/{font_family}-{font_weight}.ttf"
@@ -339,7 +337,6 @@ def images_formatted_gen(regen=False):
             for caption_line_i, caption_line in enumerate(caption_lines):
                 _, _, caption_line_w, caption_line_h = font.getbbox(caption_line)
                 draw.text((1080//2 - caption_line_w//2, int(1920*0.20)-((font_size*len(caption_lines))//2) + font_size*caption_line_i), caption_line, '#000000', font=font)
-
             img_filepath = f'{video_folderpath}/tmp/images-formatted/img-{i_str}.jpg'
             img.save(img_filepath, format='JPEG', subsampling=0, quality=100)
 
@@ -347,13 +344,16 @@ def video_final_title_gen(regen=False):
     with open(f'{hub_folderpath}/ideas.txt') as f: content = f.read()
     ideas = content.strip().split('\n')
     for idea_i, idea in enumerate(ideas):
+        print(idea_i, ideas_num_min)
+        print(idea_i, ideas_num_max)
+        print()
         if idea_i < ideas_num_min or idea_i >= ideas_num_max: continue
         i_str = ''
         if idea_i >= 1000: i_str = f'{idea_i}'
         elif idea_i >= 100: i_str = f'0{idea_i}'
         elif idea_i >= 10: i_str = f'00{idea_i}'
         else: i_str = f'000{idea_i}'
-        idea_slug = idea.strip().lower().replace(' ', '-')
+        idea_slug = idea.strip().lower().replace(' ', '-').replace("'", '')
         video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
         output_filepath = f'{video_folderpath}/tmp/video-final/title.txt'
         ###
@@ -393,7 +393,7 @@ def video_final_description_gen(regen=False):
         elif idea_i >= 100: i_str = f'0{idea_i}'
         elif idea_i >= 10: i_str = f'00{idea_i}'
         else: i_str = f'000{idea_i}'
-        idea_slug = idea.strip().lower().replace(' ', '-')
+        idea_slug = idea.strip().lower().replace(' ', '-').replace("'", '')
         video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
         output_filepath = f'{video_folderpath}/tmp/video-final/description.txt'
         script_filepath = f'{video_folderpath}/tmp/texts/final.txt'
@@ -440,7 +440,7 @@ def video_final_tags_gen(regen=False):
         elif idea_i >= 100: i_str = f'0{idea_i}'
         elif idea_i >= 10: i_str = f'00{idea_i}'
         else: i_str = f'000{idea_i}'
-        idea_slug = idea.strip().lower().replace(' ', '-')
+        idea_slug = idea.strip().lower().replace(' ', '-').replace("'", '')
         video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
         script_filepath = f'{video_folderpath}/tmp/texts/final.txt'
         output_filepath = f'{video_folderpath}/tmp/video-final/tags.txt'
@@ -477,6 +477,18 @@ def video_final_tags_gen(regen=False):
             print('#################################################')
             with open(output_filepath, 'w') as f: f.write(reply)
 
+def index_to_string(i):
+    i_str = ''
+    if i >= 1000: i_str = f'{i}'
+    elif i >= 100: i_str = f'0{i}'
+    elif i >= 10: i_str = f'00{i}'
+    else: i_str = f'000{i}'
+    return i_str
+
+def sluggify(text):
+    slug = text.strip().lower().replace(' ', '-').replace("'", '')
+    return slug
+
 def video_final_preview():
     import subprocess
     with open(f'{hub_folderpath}/ideas.txt') as f: content = f.read()
@@ -488,19 +500,244 @@ def video_final_preview():
         elif idea_i >= 100: i_str = f'0{idea_i}'
         elif idea_i >= 10: i_str = f'00{idea_i}'
         else: i_str = f'000{idea_i}'
-        idea_slug = idea.strip().lower().replace(' ', '-')
+        idea_slug = idea.strip().lower().replace(' ', '-').replace("'", '')
         video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
         with open(f'{video_folderpath}/tmp/video-final/title.txt') as f: title = f.read().strip().lower().replace(' ', '-')
         video_filepath = f'{video_folderpath}/tmp/video-final/{title}.mp4'
         video_prev_filepath = f'{hub_folderpath}/video-preview/{i_str}-{idea_slug}.mp4'
         shutil.copy2(f'{video_filepath}', f'{video_prev_filepath}')
 
-ideas_num_min = 20
-ideas_num_max = 30
+def version_animated_image_background_text(regen=False):
+    for idea_i, idea in enumerate(ideas):
+        if idea_i < ideas_num_min or idea_i >= ideas_num_max: continue
+        i_str = index_to_string(idea_i)
+        idea_slug = sluggify(idea)
+        video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
+        input_script_filepath = f'{video_folderpath}/tmp/texts/final.txt'
+        output_folderpath = f'{video_folderpath}/tmp/images-animated-backgrounds-texts'
+        ###
+        try: os.makedirs(output_folderpath)
+        except: pass
+        if regen: 
+            for filename in os.listdir(f'{output_folderpath}'):
+                os.remove(f'{output_folderpath}/{filename}')
+        ###
+        image_lines, text_lines = lines_get(input_script_filepath)
+        for image_line_i, image_line in enumerate(image_lines[:999]):
+            image_line = image_line.strip().replace('.', '')
+            i_str = index_to_string(image_line_i)
+            img = Image.new(mode="RGB", size=(1080, 1920), color='#ffffff')
+            draw = ImageDraw.Draw(img)
+            # img_0000 = Image.open(f'{video_folderpath}/tmp/images/img-{i_str}.jpg')
+            # img_0000 = media.resize(img_0000, 1080, 1080)
+            # img.paste(img_0000, (0, int(1920*0.66)-(1080//2)))
+            caption_content = text_lines[image_line_i]
+            caption_content = caption_content.replace('—', ', ')
+            caption_content = caption_content.replace('’', "'")
+            font_size = 80
+            font_family, font_weight = 'Lato', 'Bold'
+            font_path = f"{g.VAULT_FOLDERPATH}/terrawhisper/database/assets/fonts/{font_family}/{font_family}-{font_weight}.ttf"
+            font = ImageFont.truetype(font_path, font_size)
+            caption_lines = text_to_lines(caption_content, font, 1000)
+            # caption_lines = caption_content.split()
+            for caption_line_i, caption_line in enumerate(caption_lines):
+                _, _, caption_line_w, caption_line_h = font.getbbox(caption_line)
+                draw.text((1080//2 - caption_line_w//2, int(1920*0.20)-((font_size*len(caption_lines))//2) + font_size*caption_line_i), caption_line, '#000000', font=font)
+            img_filepath = f'{output_folderpath}/{i_str}.jpg'
+            img.save(img_filepath, format='JPEG', subsampling=0, quality=100)
+
+def video_clips_animated_gen(regen=False):
+    for idea_i, idea in enumerate(ideas):
+        if idea_i < ideas_num_min or idea_i >= ideas_num_max: continue
+        i_str = index_to_string(idea_i)
+        idea_slug = sluggify(idea)
+        video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
+        input_images_folderpath = f'{video_folderpath}/tmp/images-animated-backgrounds-texts'
+        input_audios_folderpath = f'{video_folderpath}/tmp/audio-clips'
+        input_videos_folderpath = f'{video_folderpath}/tmp/images-animated'
+        output_folderpath = f'{video_folderpath}/tmp/video-clips-animated'
+        ###
+        if not os.path.exists(f'{output_folderpath}'):
+            os.makedirs(f'{output_folderpath}')
+        if regen: 
+            for filename in os.listdir(f'{output_folderpath}'):
+                if filename.endswith('.mp4'):
+                    os.remove(f'{output_folderpath}/{filename}')
+        ### gen
+        audio_filenames = sorted(os.listdir(input_audios_folderpath))
+        for i, audio_filename in enumerate(audio_filenames):
+            i_str = index_to_string(i)
+            input_image_filepath = f'{input_images_folderpath}/{i_str}.jpg'
+            input_video_filepath = f'{input_videos_folderpath}/{i_str}.mp4'
+            input_audio_filepath = f'{input_audios_folderpath}/{audio_filename}'
+            output_video_filepath = f'{output_folderpath}/{i_str}.mp4'
+            import subprocess
+            subprocess.run([
+                f'ffmpeg',
+                f'-loop', f'1', f'-i', f'{input_image_filepath}',
+                f'-stream_loop', f'-1', f'-i', f'{input_video_filepath}',
+                f'-i', f'{input_audio_filepath}',
+                f'-filter_complex', f'[1:v]scale=1080:1080[vid];[0:v][vid]overlay=0:840',
+                f'-map', f'2:a',
+                f'-shortest',
+                f'-c:v', f'libx264',
+                f'-pix_fmt', f'yuv420p',
+                f'-c:a', f'aac',
+                f'{output_video_filepath}',
+                f'-y',
+            ])
+            '''
+            subprocess.run([
+                f'ffmpeg',
+                f'-loop', f'1',
+                f'-i', f'{slide_filepath}',
+                f'-i', f'{audio_filepath}',
+                f'-c:v', f'libx264',
+                f'-tune', f'stillimage',
+                f'-c:a', f'aac',
+                f'-b:a', f'192k',
+                f'-shortest',
+                f'-pix_fmt', f'yuv420p',
+                f'{video_filepath}',
+                f'-y',
+            ])
+            '''
+
+def video_animated_final_gen(regen=False):
+    for idea_i, idea in enumerate(ideas):
+        if idea_i < ideas_num_min or idea_i >= ideas_num_max: continue
+        i_str = index_to_string(idea_i)
+        idea_slug = sluggify(idea)
+        video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
+        input_videos_folderpath = f'{video_folderpath}/tmp/video-clips-animated'
+        output_folderpath = f'{video_folderpath}/tmp/video-animated'
+        concat_filepath = f'{video_folderpath}/tmp/video-concat.txt'
+        ###
+        if not os.path.exists(f'{output_folderpath}'):
+            os.makedirs(f'{output_folderpath}')
+        if regen: 
+            for filename in os.listdir(f'{output_folderpath}'):
+                if filename.endswith('.mp4'):
+                    os.remove(f'{output_folderpath}/{filename}')
+        input_videos_filenames = sorted(os.listdir(f'{input_videos_folderpath}'))
+        with open(concat_filepath, 'w') as f:
+            for i, input_video_filename in enumerate(input_videos_filenames):
+                input_video_filepath = f'{input_videos_folderpath}/{input_video_filename}'
+                f.write(f"file '{input_video_filepath}'\n")
+        with open(f'{video_folderpath}/tmp/video-final/title.txt') as f: 
+            title = f.read().strip().lower().replace(' ', '-')
+        output_filepath = f'{output_folderpath}/{title}.mp4'
+        import subprocess
+        subprocess.run([
+            f'ffmpeg',
+            f'-f', f'concat',
+            f'-safe', f'0',
+            f'-i', f'{concat_filepath}',
+            f'-c', f'copy',
+            f'{output_filepath}',
+            f'-y', 
+        ])
+
+def video_clips_gradio_gen(regen=False, dispel=False):
+    import pyautogui
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.common.keys import Keys
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.common.action_chains import ActionChains
+    chrome_options = Options()
+    chrome_options.add_argument("--user-data-dir=/home/ubuntu/.config/google-chrome/SeleniumProfile")
+    chrome_options.add_argument("--profile-directory=Default")
+    driver = webdriver.Chrome(options=chrome_options)
+    driver.get("https://www.google.com")
+    driver.maximize_window()
+    ### reload page
+    # driver.get("http://localhost:7860/")
+    # time.sleep(5)
+    for idea_i, idea in enumerate(ideas):
+        if idea_i < ideas_num_min or idea_i >= ideas_num_max: continue
+        i_str = index_to_string(idea_i)
+        idea_slug = sluggify(idea)
+        idea_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
+        input_images_folderpath = f'{idea_folderpath}/tmp/images'
+        input_script_folderpath = f'{idea_folderpath}/tmp/texts'
+        output_folderpath = f'{idea_folderpath}/tmp/images-animated'
+        ###
+        if not os.path.exists(f'{output_folderpath}'):
+            os.makedirs(f'{output_folderpath}')
+        if dispel: 
+            for filename in os.listdir(f'{output_folderpath}'):
+                if filename.endswith('.mp4'):
+                    os.remove(f'{output_folderpath}/{filename}')
+        ###
+        input_script_filepath = f'{input_script_folderpath}/final.txt'
+        image_lines, text_lines = lines_get(input_script_filepath)
+        for clip_i in range(len(image_lines)):
+            ### adjust number of tries, and name the output files progressively (0000-0000, 0000-0001)
+            for i in range(4):
+                clip_i_str = index_to_string(clip_i)
+                output_filepath = f'{idea_folderpath}/tmp/images-animated/{clip_i_str}-{i}.mp4'
+                if os.path.exists(output_filepath): continue
+                # input(f'>> PRESS ANY KEY FOR NEXT GENERATION (clip {clip_i})')
+                image_line = image_lines[clip_i]
+                image_line = image_line.replace('.', ',') + ' live wallpaper style'
+                print(image_line)
+                ###
+                input_image_filepath = f'{input_images_folderpath}/{sorted(os.listdir(input_images_folderpath))[clip_i]}'
+                print(input_image_filepath)
+                ### reload page
+                driver.get("http://localhost:7860/")
+                time.sleep(5)
+                ### prompt image
+                e = driver.find_element(By.XPATH, '//input[@type="file"]')
+                img_filepath = input_image_filepath
+                e.send_keys(f'{img_filepath}') 
+                time.sleep(1)
+                ### prompt text
+                pyautogui.moveTo(500, 1100)
+                pyautogui.click()
+                pyautogui.hotkey('ctrl', 'a')
+                pyautogui.press('delete')
+                time.sleep(1)
+                prompt = image_line
+                e = driver.find_element(By.XPATH, "//span[contains(text(), 'Prompts')]/following-sibling::div//textarea")
+                driver.execute_script("arguments[0].focus();", e)
+                actions = ActionChains(driver)
+                actions.key_down(Keys.CONTROL).send_keys('a').key_up(Keys.CONTROL)
+                actions.send_keys(prompt)
+                actions.perform()
+                ### gen video
+                e = driver.find_element(By.XPATH, '//button[text()="Generate"]')
+                e.click()
+                ### save video
+                for _ in range(60):
+                    try:
+                        video = driver.find_element(By.XPATH, "//video[@data-testid='detailed-video']")
+                    except:
+                        time.sleep(5)
+                        continue
+                    video_url = video.get_attribute("src")
+                    import requests
+                    video_url = video.get_attribute("src")
+                    # Download the video
+                    response = requests.get(video_url, stream=True)
+                    response.raise_for_status()  # make sure the request worked
+                    with open(output_filepath, "wb") as f:
+                        for chunk in response.iter_content(chunk_size=8192):
+                            if chunk:
+                                f.write(chunk)
+                    print(f"Video saved")
+                time.sleep(5)
+
+ideas_num_min = 40
+ideas_num_max = 49
 if 0:
     init()
 if 0:
     images_gen(regen=False)
+### generate videos with static images
 if 1:
     images_formatted_gen(regen=False)
     video_final_title_gen(regen=False)
@@ -510,7 +747,21 @@ if 1:
     video_clips_gen(regen=False)
     video_final_gen(regen=False)
     video_final_preview()
+### generate videos with animated images
+if 0:
+    video_clips_gradio_gen(regen=False, dispel=True)
+if 0:
+    version_animated_image_background_text(regen=False)
+    images_formatted_gen(regen=False)
+    video_final_title_gen(regen=False)
+    video_final_description_gen(regen=False)
+    video_final_tags_gen(regen=False)
+    audio_clips_gen(regen=False)
+    video_clips_animated_gen(regen=False)
+    video_animated_final_gen(regen=False)
+    video_final_preview()
 
 # import subprocess
 # subprocess.Popen(['vlc', '--play-and-exit', f'{video_folderpath}/tmp/video-final/video.mp4'])
+
 

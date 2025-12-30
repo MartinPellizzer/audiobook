@@ -10,6 +10,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.firefox.options import Options
 
+def sluggify(text):
+    slug = text.strip().lower().replace(' ', '-').replace("'", '')
+    return slug
+
 with open('/home/ubuntu/vault/creds/buffer-username.txt') as f: username = f.read().strip()
 with open('/home/ubuntu/vault/creds/buffer-password.txt') as f: password = f.read().strip()
 
@@ -61,7 +65,6 @@ else:
 for i in range(3):
     driver.get("https://publish.buffer.com/channels/69416b2f29ea336fd686e806")
     time.sleep(10)
-
     post_add = False
     e = driver.find_element(By.XPATH, '//button[@id="queue-tab"]')
     queue_tab = e.text
@@ -70,10 +73,8 @@ for i in range(3):
             queue_num = int(line)
             if queue_num < 3: post_add = True
         except: pass
-
     if not post_add: break
-
-    hub_folderpath = f'/home/ubuntu/proj/audiobook/psychology'
+    hub_folderpath = f'/home/ubuntu/vault/audiobook/psychology'
     with open(f'{hub_folderpath}/video-i.txt') as f: short_i = int(f.read())
     ###
     e = driver.find_element(By.XPATH, '//button[text()="New"]')
@@ -83,7 +84,6 @@ for i in range(3):
     e.click()
     time.sleep(10)
     ###
-    hub_folderpath = f'psychology'
     with open(f'{hub_folderpath}/ideas.txt') as f: content = f.read()
     ideas = content.strip().split('\n')
     idea_i = short_i
@@ -93,7 +93,7 @@ for i in range(3):
     elif idea_i >= 100: i_str = f'0{idea_i}'
     elif idea_i >= 10: i_str = f'00{idea_i}'
     else: i_str = f'000{idea_i}'
-    idea_slug = idea.strip().lower().replace(' ', '-')
+    idea_slug = sluggify(idea)
     video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
     ###
     title_filepath = f'{hub_folderpath}/{i_str}-{idea_slug}/tmp/video-final/title.txt'
@@ -106,8 +106,8 @@ for i in range(3):
     print(description)
     print(tags)
     ###
-    title_slug = title.lower().strip().replace(' ', '-')
-    video_filepath = f'/home/ubuntu/proj/audiobook/{hub_folderpath}/{i_str}-{idea_slug}/tmp/video-final/{title_slug}.mp4'
+    title_slug = sluggify(title)
+    video_filepath = f'{hub_folderpath}/{i_str}-{idea_slug}/tmp/video-final/{title_slug}.mp4'
     print(video_filepath)
     ###
     e = driver.find_element(By.XPATH, '//input[@name="file-upload-input"]')
