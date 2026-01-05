@@ -99,15 +99,25 @@ for i in range(3):
     title_filepath = f'{hub_folderpath}/{i_str}-{idea_slug}/tmp/video-final/title.txt'
     description_filepath = f'{hub_folderpath}/{i_str}-{idea_slug}/tmp/video-final/description.txt'
     tags_filepath = f'{hub_folderpath}/{i_str}-{idea_slug}/tmp/video-final/tags.txt'
-    with open(title_filepath) as f: title = f.read()
+    try:
+        with open(title_filepath) as f: 
+            title = f.read()
+            title_slug = sluggify(title)
+    except:
+        title = idea
+        title_slug = idea_slug
     with open(description_filepath) as f: description = f.read()
-    with open(tags_filepath) as f: tags = f.read()
+    # with open(tags_filepath) as f: tags = f.read()
     print(title)
     print(description)
-    print(tags)
+    # print(tags)
     ###
-    title_slug = sluggify(title)
-    video_filepath = f'{hub_folderpath}/{i_str}-{idea_slug}/tmp/video-final/{title_slug}.mp4'
+    video_animated_filepath = f'{hub_folderpath}/{i_str}-{idea_slug}/tmp/video-animated/{title_slug}.mp4'
+    video_static_filepath = f'{hub_folderpath}/{i_str}-{idea_slug}/tmp/video-final/{title_slug}.mp4'
+    if os.path.exists(video_animated_filepath):
+        video_filepath = video_animated_filepath
+    else:
+        video_filepath = video_static_filepath
     print(video_filepath)
     ###
     e = driver.find_element(By.XPATH, '//input[@name="file-upload-input"]')

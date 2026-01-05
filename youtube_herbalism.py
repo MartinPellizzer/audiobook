@@ -3,6 +3,9 @@ import json
 import shutil
 import subprocess
 
+from PIL import Image, ImageFont, ImageDraw, ImageColor, ImageOps
+
+from lib import g
 from lib import llm
 from lib import zimage
 
@@ -37,11 +40,26 @@ def lines_get(filepath):
         lines.append(line)
     return lines
 
+def text_to_lines(text, font, max_w):
+    lines = []
+    line = ''
+    for word in text.split():
+        _, _, word_w, word_h = font.getbbox(word)
+        _, _, line_w, line_h = font.getbbox(line.strip())
+        if  line_w + word_w < max_w:
+            line += f'{word} '
+        else:
+            lines.append(line.strip())
+            line = f'{word} '
+    if line.strip() != '':
+        lines.append(line.strip())
+    return lines
+
 def init():
     with open(f'{hub_folderpath}/ideas.txt') as f: content = f.read()
     ideas = content.strip().split('\n')
     for idea_i, idea in enumerate(ideas):
-        if idea_i < ideas_num_min or idea_i >= ideas_num_max: continue
+        if idea_i < ideas_num_min or idea_i > ideas_num_max: continue
         print(idea)
         i_str = index_to_string(idea_i)
         idea_slug = sluggify(idea)
@@ -59,7 +77,7 @@ def init():
 
 def images_gen(regen=False):
     for idea_i, idea in enumerate(ideas):
-        if idea_i < ideas_num_min or idea_i >= ideas_num_max: continue
+        if idea_i < ideas_num_min or idea_i > ideas_num_max: continue
         i_str = index_to_string(idea_i)
         idea_slug = sluggify(idea)
         video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
@@ -88,7 +106,7 @@ def images_gen(regen=False):
 
 def images_auto_gen(regen=False):
     for idea_i, idea in enumerate(ideas):
-        if idea_i < ideas_num_min or idea_i >= ideas_num_max: continue
+        if idea_i < ideas_num_min or idea_i > ideas_num_max: continue
         i_str = index_to_string(idea_i)
         idea_slug = sluggify(idea)
         video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
@@ -113,7 +131,7 @@ def images_auto_gen(regen=False):
 
 def images_prompts_gen(regen=False):
     for idea_i, idea in enumerate(ideas):
-        if idea_i < ideas_num_min or idea_i >= ideas_num_max: continue
+        if idea_i < ideas_num_min or idea_i > ideas_num_max: continue
         i_str = index_to_string(idea_i)
         idea_slug = sluggify(idea)
         video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
@@ -154,7 +172,7 @@ def images_prompts_gen(regen=False):
 
 def video_clips_gen(regen=False):
     for idea_i, idea in enumerate(ideas):
-        if idea_i < ideas_num_min or idea_i >= ideas_num_max: continue
+        if idea_i < ideas_num_min or idea_i > ideas_num_max: continue
         i_str = index_to_string(idea_i)
         idea_slug = sluggify(idea)
         video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
@@ -195,7 +213,7 @@ def video_clips_gen(regen=False):
 
 def video_gen(regen=False):
     for idea_i, idea in enumerate(ideas):
-        if idea_i < ideas_num_min or idea_i >= ideas_num_max: continue
+        if idea_i < ideas_num_min or idea_i > ideas_num_max: continue
         i_str = index_to_string(idea_i)
         idea_slug = sluggify(idea)
         video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
@@ -261,8 +279,369 @@ def video_gen(regen=False):
                 clip_out_filepath,
             ], check=True)
 
+def audio_clips_gen(regen=False):
+    from kokoro import KPipeline
+    import soundfile as sf 
+    with open(f'{hub_folderpath}/ideas.txt') as f: content = f.read()
+    ideas = content.strip().split('\n')
+    for idea_i, idea in enumerate(ideas):
+        if idea_i < ideas_num_min or idea_i > ideas_num_max: continue
+        i_str = index_to_string(idea_i)
+        idea_slug = sluggify(idea)
+        video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
+        final_filepath = f'{video_folderpath}/tmp/texts/final.txt'
+        print(final_filepath)
+        if not os.path.exists(f'{video_folderpath}'):
+            os.makedirs(f'{video_folderpath}')
+        if not os.path.exists(f'{video_folderpath}/tmp'):
+            os.makedirs(f'{video_folderpath}/tmp')
+        if not os.path.exists(f'{video_folderpath}/tmp/audio-clips'):
+            os.makedirs(f'{video_folderpath}/tmp/audio-clips')
+        for filename in os.listdir(f'{video_folderpath}/tmp/audio-clips'):
+            os.remove(f'{video_folderpath}/tmp/audio-clips/{filename}')
+        text_lines = lines_get(final_filepath)
+        for line in text_lines:
+            print(line)
+        print(len(text_lines))
+        # quit()
+        j = 0
+        pipeline = KPipeline(lang_code='a')
+        for scene in text_lines:
+            text = scene
+            generator = pipeline(
+                text, 
+                voice='am_michael',
+                speed = 1.1,
+            )
+            for (gs, ps, audio) in generator:
+                print(j, gs, ps)
+                j_str = ''
+                if j >= 1000: j_str = f'{j}'
+                elif j >= 100: j_str = f'0{j}'
+                elif j >= 10: j_str = f'00{j}'
+                else: j_str = f'000{j}'
+                sf.write(f'{video_folderpath}/tmp/audio-clips/audio-{j_str}.wav', audio, 24000)
+                j += 1
+
+def video_audio_gen(regen=False):
+    with open(f'{hub_folderpath}/ideas.txt') as f: content = f.read()
+    ideas = content.strip().split('\n')
+    for idea_i, idea in enumerate(ideas):
+        if idea_i < ideas_num_min or idea_i > ideas_num_max: continue
+        i_str = index_to_string(idea_i)
+        idea_slug = sluggify(idea)
+        video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
+        final_filepath = f'{video_folderpath}/tmp/texts/final.txt'
+        output_folderpath = f'{video_folderpath}/tmp/video-audio'
+        output_filepath = f'{output_folderpath}/0000.mp4'
+        print(final_filepath)
+        if not os.path.exists(f'{video_folderpath}'):
+            os.makedirs(f'{video_folderpath}')
+        if not os.path.exists(f'{video_folderpath}/tmp'):
+            os.makedirs(f'{video_folderpath}/tmp')
+        if not os.path.exists(f'{video_folderpath}/tmp/video-clips'):
+            os.makedirs(f'{video_folderpath}/tmp/video-clips')
+        for filename in os.listdir(f'{video_folderpath}/tmp/video-clips'):
+            os.remove(f'{video_folderpath}/tmp/video-clips/{filename}')
+        ###
+        if not os.path.exists(f'{output_folderpath}'):
+            os.makedirs(f'{output_folderpath}')
+        for filename in os.listdir(f'{output_folderpath}'):
+            os.remove(f'{output_folderpath}/{filename}')
+        ### gen
+        audio_filename = sorted(os.listdir(f'{video_folderpath}/tmp/audio-clips'))[-1]
+        audio_filepath = f'{video_folderpath}/tmp/audio-clips/{audio_filename}'
+        video_filename = sorted(os.listdir(f'{video_folderpath}/tmp/video-clips-concat-transitions'))[-1]
+        video_filepath = f'{video_folderpath}/tmp/video-clips-concat-transitions/{video_filename}'
+        subprocess.run([
+            f'ffmpeg',
+            f'-i', f'{video_filepath}',
+            f'-i', f'{audio_filepath}',
+            f'-c:v', f'copy',
+            f'-c:a', f'aac',
+            f'-map', f'0:v:0',
+            f'-map', f'1:a:0',
+            f'-shortest',
+            f'{output_filepath}',
+            f'-y',
+        ])
+
+def images_texts_gen(regen=False):
+    for idea_i, idea in enumerate(ideas):
+        if idea_i < ideas_num_min or idea_i > ideas_num_max: continue
+        i_str = index_to_string(idea_i)
+        idea_slug = sluggify(idea)
+        video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
+        input_script_filepath = f'{video_folderpath}/tmp/texts/final.txt'
+        output_folderpath = f'{video_folderpath}/tmp/images-texts'
+        ###
+        try: os.makedirs(output_folderpath)
+        except: pass
+        if regen: 
+            for filename in os.listdir(f'{output_folderpath}'):
+                os.remove(f'{output_folderpath}/{filename}')
+        ###
+        text_lines = lines_get(input_script_filepath)
+        fg_color = '#ffffff'
+        bg_color = '#000000'
+        for text_line_i, text_line in enumerate(text_lines):
+            i_str = index_to_string(text_line_i)
+            ###
+            font_size = 80
+            font_family, font_weight = 'Lato', 'Bold'
+            font_path = f"{g.VAULT_FOLDERPATH}/terrawhisper/database/assets/fonts/{font_family}/{font_family}-{font_weight}.ttf"
+            font = ImageFont.truetype(font_path, font_size)
+            caption_lines = text_to_lines(text_line, font, 1000)
+            lines_num = len(caption_lines)
+            img_h = lines_num * (font_size)
+            ###
+            img = Image.new(mode="RGB", size=(1080, img_h), color=bg_color)
+            text_line = text_line.replace('—', ', ')
+            text_line = text_line.replace('’', "'")
+            draw = ImageDraw.Draw(img)
+            ###
+            for caption_line_i, caption_line in enumerate(caption_lines):
+                _, _, caption_line_w, caption_line_h = font.getbbox(caption_line)
+                draw.text((1080//2 - caption_line_w//2, font_size*caption_line_i), caption_line, fg_color, font=font)
+            img_filepath = f'{output_folderpath}/{i_str}.jpg'
+            img.save(img_filepath, format='JPEG', subsampling=0, quality=100)
+
+def audio_timing_gen(regen=False):
+    import whisperx
+    import torch
+    for idea_i, idea in enumerate(ideas):
+        if idea_i < ideas_num_min or idea_i > ideas_num_max: continue
+        i_str = index_to_string(idea_i)
+        idea_slug = sluggify(idea)
+        video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
+        input_audio_filepath = f'{video_folderpath}/tmp/audio-clips/audio-0000.wav'
+        input_text_filepath = f'{video_folderpath}/tmp/texts/final.txt'
+        output_text_filepath = f'{video_folderpath}/tmp/texts/timing.txt'
+        audio_file = input_audio_filepath
+        ##
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        print("Using device:", device)
+        model = whisperx.load_model(
+            "medium",
+            device="cpu",
+            compute_type="float32",
+            vad_method="silero"
+        )
+        result = model.transcribe(audio_file)
+        align_model, metadata = whisperx.load_align_model(
+            language_code=result["language"],
+            device=device
+        )
+        aligned = whisperx.align(
+            result["segments"],
+            align_model,
+            metadata,
+            audio_file,
+            device=device
+        )
+        print("\nWord-level timestamps:\n")
+        output_text = ''
+        for w in aligned["word_segments"]:
+            start = w["start"]
+            end = w["end"]
+            word = w["word"]
+            print(f"{start:6.2f}s → {end:6.2f}s  {word}")
+            output_text += f"{start:6.2f}s → {end:6.2f}s  {word}" + '\n'
+        with open(output_text_filepath, 'w') as f: f.write(output_text)
+        print(output_text_filepath)
+
+        video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
+        output_folderpath = f'{video_folderpath}/tmp/ass'
+        output = f'{video_folderpath}/tmp/ass/karaoke.ass'
+        ###
+        try: os.makedirs(output_folderpath)
+        except: pass
+        if regen: 
+            for filename in os.listdir(f'{output_folderpath}'):
+                os.remove(f'{output_folderpath}/{filename}')
+        header = """[Script Info]
+    Title: Karaoke
+    ScriptType: v4.00+
+    PlayResX: 1920
+    PlayResY: 1080
+
+    [V4+ Styles]
+    Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+    Style: Karaoke,Arial,48,&H0000FFFF,&H00FFFFFF,&H00000000,&H64000000,1,0,0,0,100,100,0,0,1,3,1,2,60,60,80,1
+
+    [Events]
+    Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+    """
+        lines = []
+        current_words = []
+        line_start = None
+        for w in aligned['word_segments']:
+            if line_start is None:
+                line_start = w["start"]
+            duration_cs = max(1, int((w["end"] - w["start"]) * 100))
+            text = w["word"]
+            current_words.append(f"{{\\k{duration_cs}}}{text}")
+
+            ###
+            '''
+            prev_end = None
+            for w in aligned["word_segments"]:
+                if line_start is None:
+                    line_start = w["start"]
+                if prev_end and w["start"] - prev_end > 0.7:
+                    # new sentence after pause
+                    lines.append((line_start, prev_end, " ".join(current_words)))
+                    current_words = []
+                    line_start = w["start"]
+                duration_cs = max(1, int((w["end"] - w["start"]) * 100))
+                current_words.append(f"{{\\k{duration_cs}}}{w['word']}")
+                prev_end = w["end"]
+            # flush last line
+            if current_words:
+                lines.append((line_start, prev_end, " ".join(current_words)))
+            '''
+            ###
+            if text.endswith((".", "?", "!")):
+                line_end = w["end"]
+                lines.append((line_start, line_end, " ".join(current_words)))
+                current_words = []
+                line_start = None
+            ###
+        with open(output, "w", encoding="utf-8") as f:
+            f.write(header)
+            for start, end, text in lines:
+                f.write(
+                    f"Dialogue: 0,{sec_to_ass_time(start)},{sec_to_ass_time(end)},Karaoke,,0,0,0,,{text}\n"
+                )
+        print(f"Written {output}")
+
+
+def sec_to_ass_time(t):
+    h = int(t // 3600)
+    m = int((t % 3600) // 60)
+    s = t % 60
+    return f"{h}:{m:02d}:{s:05.2f}"
+
+def video_karaoke_gen(regen=False):
+    with open(f'{hub_folderpath}/ideas.txt') as f: content = f.read()
+    ideas = content.strip().split('\n')
+    for idea_i, idea in enumerate(ideas):
+        if idea_i < ideas_num_min or idea_i > ideas_num_max: continue
+        i_str = index_to_string(idea_i)
+        idea_slug = sluggify(idea)
+        video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
+        input_ass_folderpath = f'{video_folderpath}/tmp/ass'
+        input_ass_filepath = f'{input_ass_folderpath}/karaoke.ass'
+        input_video_folderpath = f'{video_folderpath}/tmp/video-audio'
+        input_video_filepath = f'{input_video_folderpath}/0000.mp4'
+        output_folderpath = f'{video_folderpath}/tmp/video-karaoke'
+        output_filepath = f'{output_folderpath}/0000.mp4'
+        print(output_filepath)
+        ###
+        if not os.path.exists(f'{output_folderpath}'):
+            os.makedirs(f'{output_folderpath}')
+        for filename in os.listdir(f'{output_folderpath}'):
+            os.remove(f'{output_folderpath}/{filename}')
+        ### gen
+        # ffmpeg -i input.mp4 -vf "subtitles=karaoke.ass" -c:a copy output_karaoke.mp4
+        subprocess.run([
+            f'ffmpeg',
+            f'-i', f'{input_video_filepath}',
+            f'-vf', f'subtitles={input_ass_filepath}',
+            f'-c:a', f'copy',
+            f'{output_filepath}',
+            f'-y',
+        ])
+
+def audio_timing_gen_2(regen=False):
+    import whisperx
+    import torch
+    for idea_i, idea in enumerate(ideas):
+        if idea_i < ideas_num_min or idea_i > ideas_num_max: continue
+        i_str = index_to_string(idea_i)
+        idea_slug = sluggify(idea)
+        video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
+        input_audio_filepath = f'{video_folderpath}/tmp/audio-clips/audio-0000.wav'
+        input_text_filepath = f'{video_folderpath}/tmp/texts/final.txt'
+        output_text_filepath = f'{video_folderpath}/tmp/texts/timing.txt'
+        audio_file = input_audio_filepath
+        ##
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        print("Using device:", device)
+        model = whisperx.load_model(
+            "medium",
+            device="cpu",
+            compute_type="float32",
+            vad_method="silero"
+        )
+        result = model.transcribe(audio_file)
+        align_model, metadata = whisperx.load_align_model(
+            language_code=result["language"],
+            device=device
+        )
+        aligned = whisperx.align(
+            result["segments"],
+            align_model,
+            metadata,
+            audio_file,
+            device=device
+        )
+        print("\nWord-level timestamps:\n")
+        output_text = ''
+        for w in aligned["word_segments"]:
+            start = w["start"]
+            end = w["end"]
+            word = w["word"]
+            print(f"{start:6.2f}s → {end:6.2f}s  {word}")
+            output_text += f"{start:6.2f}s → {end:6.2f}s  {word}" + '\n'
+        with open(output_text_filepath, 'w') as f: f.write(output_text)
+        print(output_text_filepath)
+
+        video_folderpath = f'{hub_folderpath}/{i_str}-{idea_slug}'
+        output_folderpath = f'{video_folderpath}/tmp/ass'
+        output = f'{video_folderpath}/tmp/ass/karaoke.ass'
+        ###
+        try: os.makedirs(output_folderpath)
+        except: pass
+        if regen: 
+            for filename in os.listdir(f'{output_folderpath}'):
+                os.remove(f'{output_folderpath}/{filename}')
+
+        def ass_time(t):
+            h = int(t // 3600)
+            m = int((t % 3600) // 60)
+            s = t % 60
+            return f"{h}:{m:02d}:{s:05.2f}"
+
+        header = """[Script Info]
+        ScriptType: v4.00+
+        PlayResX: 1080
+        PlayResY: 1920
+
+        [V4+ Styles]
+        Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+        Style: Word,Arial,256,&H00FFFFFF,&H00000000,&H00000000,1,0,0,0,120,100,0,0,3,20,0,5,0,0,0,1
+
+        [Events]
+        Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+        """
+
+        with open(output, "w", encoding="utf-8") as f:
+            f.write(header)
+
+            for w in aligned["word_segments"]:
+                start = ass_time(w["start"])
+                end = ass_time(w["end"])
+                word = w["word"]
+
+                f.write(
+                    f"Dialogue: 0,{start},{end},Word,,0,0,0,,{word}\n"
+                )
+
+        print(f"Written {output}")
+
 ideas_num_min = 0
-ideas_num_max = 1
+ideas_num_max = 9
 if 0:
     init()
 
@@ -272,5 +651,12 @@ if 0:
 if 1:
     # images_prompts_gen(regen=False)
     # images_gen(regen=True)
-    # video_clips_gen(regen=True)
-    video_gen(regen=True)
+    video_clips_gen(regen=True)
+    # images_texts_gen(regen=True)
+    # video_gen(regen=True)
+    # audio_clips_gen(regen=False)
+    # video_audio_gen(regen=False)
+
+    # audio_timing_gen_2(regen=True)
+    # video_karaoke_gen()
+
