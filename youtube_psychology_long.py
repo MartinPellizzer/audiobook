@@ -62,7 +62,7 @@ def audio_clips_gen(regen=False):
         i_str = index_to_string(idea_i)
         idea_slug = sluggify(idea)
         video_folderpath = f'{hub_folderpath}'
-        input_script_filepath = f'{video_folderpath}/script.txt'
+        input_script_paragraphs_folderpath = f'{video_folderpath}/script-paragraphs'
         output_folderpath = f'{video_folderpath}/audio-clips'
         ###
         try: os.makedirs(output_folderpath)
@@ -70,25 +70,27 @@ def audio_clips_gen(regen=False):
         if regen: 
             for filename in os.listdir(output_folderpath):
                 os.remove(f'{output_folderpath}/{filename}')
-        image_lines, text_lines = lines_get(input_script_filepath)
-        for line in text_lines:
-            print(line)
-        print(len(text_lines))
-        # quit()
-        j = 0
-        pipeline = KPipeline(lang_code='a')
-        for scene in text_lines:
-            text = scene
-            generator = pipeline(
-                text, 
-                voice='am_michael',
-                speed = 1.1,
-            )
-            for (gs, ps, audio) in generator:
-                print(j, gs, ps)
-                j_str = index_to_string(j)
-                sf.write(f'{output_folderpath}/{j_str}.wav', audio, 24000)
-                j += 1
+        ###
+        script_paragraphs_filenames = sorted(os.listdir(input_script_paragraphs_folderpath))
+        for script_i in range(len(script_paragraphs_filenames)):
+            filename_base = script_paragraphs_filenames[script_i].split('.')[0]
+            script_paragraph_filepath = f'{input_script_paragraphs_folderpath}/{script_paragraphs_filenames[script_i]}'
+            image_lines, text_lines = lines_get(script_paragraph_filepath)
+            ###
+            j = 0
+            pipeline = KPipeline(lang_code='a')
+            for scene in text_lines:
+                text = scene
+                generator = pipeline(
+                    text, 
+                    voice='am_michael',
+                    speed = 1.1,
+                )
+                for (gs, ps, audio) in generator:
+                    print(j, gs, ps)
+                    # j_str = index_to_string(script_i)
+                    sf.write(f'{output_folderpath}/{filename_base}.wav', audio, 24000)
+                    j += 1
 
 def audio_full_gen(regen=False):
     for idea_i, idea in enumerate(ideas):
@@ -129,37 +131,39 @@ def images_gen(regen=False):
         i_str = index_to_string(idea_i)
         idea_slug = sluggify(idea)
         video_folderpath = f'{hub_folderpath}'
-        input_script_lines_images_filepath = f'{video_folderpath}/script-lines-images/0000.txt'
+        input_script_lines_images_folderpath = f'{video_folderpath}/script-lines-images'
         output_folderpath = f'{video_folderpath}/images'
         ###
+        if regen: 
+            try: shutil.rmtree(output_folderpath)
+            except: pass
         try: os.makedirs(output_folderpath)
         except: pass
-        if regen: 
-            for filename in os.listdir(f'{output_folderpath}'):
-                os.remove(f'{output_folderpath}/{filename}')
-        ###
-        image_lines, text_lines = lines_get(input_script_lines_images_filepath)
-        line_i = 0
-        for line in image_lines[:999]:
-            line = line.strip().replace('.', '')
-            i_str = index_to_string(line_i)
-            line_i += 1
-            output_filepath = f'{video_folderpath}/tmp/images/{i_str}.jpg'
-            output_filepath = f'{output_folderpath}/{i_str}.jpg'
-            if os.path.exists(output_filepath): continue
-            # with open(f'{video_folderpath}/tmp/prompts/prompt.txt') as f: prompt = f.read()
-            # with open(f'{hub_folderpath}/prompt.txt') as f: prompt = f.read()
-            # prompt = prompt.replace('[line]', line)
-            if 1:
-                prompt = f'''
-                    {line},
-                    cartoon,
-                    doodle,
-                    illustration,
-                '''
-            print(prompt)
-            image = zimage.image_create(output_filepath=output_filepath, prompt=prompt, width=1024, height=768, seed=-1)
-        # return
+        scripts_filenames = sorted(os.listdir(input_script_lines_images_folderpath))
+        for script_filename in scripts_filenames:
+            script_filename_base = script_filename.split('.')[0]
+            output_folderpath_sub = f'{output_folderpath}/{script_filename_base}'
+            try: os.makedirs(f'{output_folderpath_sub}')
+            except: pass
+            script_filepath = f'{input_script_lines_images_folderpath}/{script_filename}'
+            image_lines, text_lines = lines_get(script_filepath)
+            line_i = 0
+            for line in image_lines[:999]:
+                line = line.strip().replace('.', '')
+                i_str = index_to_string(line_i)
+                line_i += 1
+                output_filepath = f'{output_folderpath_sub}/{i_str}.jpg'
+                if os.path.exists(output_filepath): continue
+                if 1:
+                    prompt = f'''
+                        {line},
+                        cartoon,
+                        doodle,
+                        illustration,
+                    '''
+                image = zimage.image_create(
+                    output_filepath=output_filepath, prompt=prompt, width=1024, height=768, seed=-1
+                )
 
 def video_clips_gen(regen=False):
     for idea_i, idea in enumerate(ideas):
@@ -200,6 +204,39 @@ def video_clips_gen(regen=False):
                 f'-y',
             ])
 
+def slideshow_full_gen(regen=False):
+    for idea_i, idea in enumerate(ideas):
+        # if idea_i < ideas_num_min or idea_i > ideas_num_max: continue
+        i_str = index_to_string(idea_i)
+        idea_slug = sluggify(idea)
+        ###
+        video_folderpath = f'{hub_folderpath}'
+        input_slideshows_folderpath = f'{video_folderpath}/slideshows'
+        output_folderpath = f'{video_folderpath}/slideshow-full'
+        output_filepath = f'{output_folderpath}/0000.mp4'
+        concat_filepath = f'{video_folderpath}/concat.txt'
+        ###
+        try: os.makedirs(output_folderpath)
+        except: pass
+        if regen: 
+            for filename in os.listdir(f'{output_folderpath}'):
+                os.remove(f'{output_folderpath}/{filename}')
+        ###
+        filenames = sorted(os.listdir(f'{input_slideshows_folderpath}'))
+        with open(concat_filepath, 'w') as f:
+            for i, filename in enumerate(filenames):
+                filepath = f'{input_slideshows_folderpath}/{filename}'
+                f.write(f"file '{filepath}'\n")
+        subprocess.run([
+            f'ffmpeg',
+            f'-f', f'concat',
+            f'-safe', f'0',
+            f'-i', f'{concat_filepath}',
+            f'-c', f'copy',
+            f'{output_filepath}',
+            f'-y', 
+        ])
+
 def video_full_gen(regen=False):
     for idea_i, idea in enumerate(ideas):
         # if idea_i < ideas_num_min or idea_i > ideas_num_max: continue
@@ -234,16 +271,15 @@ def video_full_gen(regen=False):
             f'-y', 
         ])
 
-def script_lines(regen=False):
+def script_lines_gen(regen=False):
     for idea_i, idea in enumerate(ideas):
         # if idea_i < ideas_num_min or idea_i > ideas_num_max: continue
         i_str = index_to_string(idea_i)
         idea_slug = sluggify(idea)
         ###
         video_folderpath = f'{hub_folderpath}'
-        input_script_filepath = f'{video_folderpath}/script.txt'
+        input_script_paragraphs_folderpath = f'{video_folderpath}/script-paragraphs'
         output_folderpath = f'{video_folderpath}/script-lines'
-        output_filepath = f'{output_folderpath}/0000.txt'
         ###
         try: os.makedirs(output_folderpath)
         except: pass
@@ -251,30 +287,21 @@ def script_lines(regen=False):
             for filename in os.listdir(f'{output_folderpath}'):
                 os.remove(f'{output_folderpath}/{filename}')
         ###
-        with open(f'{input_script_filepath}') as f: text = f.read()
-        text = text.replace('’', "'")
-        text = text.replace('”', '"')
-        text = text.replace('“', '"')
-        text = text.replace('—', ', ')
-        text = text.replace('…', ',')
-        text = text.replace('."', '".')
-        import re
-        # Characters to split by
-        delimiters = [".", ";", "?"]
-        # Create a regex pattern with capturing group for the delimiters
-        pattern = "([{}])".format(re.escape("".join(delimiters)))
-        # Use re.split
-        parts = re.split(pattern, text)
-        # Combine each part with its delimiter
-        result = [parts[i] + parts[i+1] for i in range(0, len(parts)-1, 2)]
-        # If there’s a leftover piece without a delimiter at the end, append it
-        if len(parts) % 2 != 0:
-            result.append(parts[-1])
-        for line in result:
-            print(line.strip())
-        lines = '\n'.join(result)
-        with open(output_filepath, 'w') as f: f.write(lines)
-        # quit()
+        script_paragraphs_filenames = os.listdir(input_script_paragraphs_folderpath)
+        for filename in script_paragraphs_filenames:
+            script_paragraph_filepath = f'{input_script_paragraphs_folderpath}/{filename}'
+            text = io.file_read(script_paragraph_filepath)
+            delimiters = [".", ";", "?"]
+            pattern = "([{}])".format(re.escape("".join(delimiters)))
+            parts = re.split(pattern, text)
+            result = [parts[i] + parts[i+1] for i in range(0, len(parts)-1, 2)]
+            if len(parts) % 2 != 0:
+                result.append(parts[-1])
+            for line in result:
+                print(line.strip())
+            lines = '\n'.join(result)
+            output_filepath = f'{output_folderpath}/{filename}'
+            io.file_write(output_filepath, lines)
 
 def script_lines_images(regen=False):
     for idea_i, idea in enumerate(ideas):
@@ -283,58 +310,41 @@ def script_lines_images(regen=False):
         idea_slug = sluggify(idea)
         ###
         video_folderpath = f'{hub_folderpath}'
-        input_script_lines_filepath = f'{video_folderpath}/script-lines/0000.txt'
+        input_script_lines_folderpath = f'{video_folderpath}/script-lines'
         output_folderpath = f'{video_folderpath}/script-lines-images'
-        output_filepath = f'{output_folderpath}/0000.txt'
         ###
         try: os.makedirs(output_folderpath)
         except: pass
         if regen: 
             for filename in os.listdir(f'{output_folderpath}'):
                 os.remove(f'{output_folderpath}/{filename}')
-        with open(input_script_lines_filepath) as f: lines = '\n'.join(f.read().split('\n')[:10])
         ###
-        prompt = f'''
-            I'm going to give some NARRATED SENTENCES from a youtube video about the topic: The Psychology of People Who Are Lazy but Ambitious. 
-            These sentences are one per line, and I want you to write a detailed prompt in one paragraph below each narrated sentence, describing the scene for me to use it for stable diffusion to generate the corresponding visual.
-            These prompts must include the subject, the action performed, and the environment, in this order.
-            The subject is always a young cartoon man. 
-            Write these prompts for images inside squared brackets.
-            Here's the NARRATED SENTENCES:
-            {lines}
-            /no_think
-        '''
-
-            # Start each image prompt with the words: "a cartoon young man".
-
-        '''
-        write the full script for: Psychology of People Who Stop Competing With Others
-
-        to write the script:
-        - write the full narrated sentences, structured like you suggested before to make a 60 seconds video.
-        - below each narrated sentence, write a prompt in one detailed paragraph describing the scene for me to use it for stable diffusion to generate the corresponding visual. 
-        - this prompt must include the subject, the action performed, and the environment. 
-        - the subject is always a young man. 
-        - the action must always be a stationary action, like standing, sit, reading, etc., never a dynamic action like walking or running. 
-        - don't include other info like lighting and style because i'll add them myself. 
-        - write the prompts for images inside squared brackets. 
-        - each image prompt must be standalone, not a continuation of the previous ones. start each image prompt with "a cartoon young man".
-
-        reply only with the content. 
-        don't include titles.
-        update the structure of the script based on the suggestion you gave me from the analytics.
-        don't miss last sentence image prompt.
-        '''
-        print(prompt)
-        reply = llm.reply(prompt)
-        if '</think>' in reply:
-            reply = reply.split('</think>')[1].strip()
-        reply = reply.replace('*', '')
-        print('#################################################')
-        print(reply)
-        print(output_filepath)
-        print('#################################################')
-        with open(output_filepath, 'w') as f: f.write(reply)
+        script_lines_filenames = os.listdir(input_script_lines_folderpath)
+        for filename in script_lines_filenames:
+            script_line_filepath = f'{input_script_lines_folderpath}/{filename}'
+            text = '\n'.join([line.strip() for line in io.file_read(script_line_filepath).split('\n')])
+            lines = text
+            prompt = f'''
+                I'm going to give some NARRATED SENTENCES from a youtube video about the topic: The Psychology of People Who Are Lazy but Ambitious. 
+                These sentences are one per line, and I want you to repeate them as they are, plus write a detailed prompt in one paragraph below each narrated sentence, describing the scene for me to use it for stable diffusion to generate the corresponding visual.
+                These prompts must include the subject, the action performed, and the environment, in this order.
+                The subject is always a young cartoon man. 
+                Write these prompts for images inside squared brackets.
+                Here's the NARRATED SENTENCES:
+                {lines}
+                /no_think
+            '''
+            print(prompt)
+            reply = llm.reply(prompt)
+            if '</think>' in reply:
+                reply = reply.split('</think>')[1].strip()
+            reply = reply.replace('*', '')
+            output_filepath = f'{output_folderpath}/{filename}'
+            io.file_write(output_filepath, reply)
+            print('#################################################')
+            print(reply)
+            print(output_filepath)
+            print('#################################################')
 
 def audio_timing_gen(regen=False):
     import whisperx
@@ -346,20 +356,16 @@ def audio_timing_gen(regen=False):
         ###
         video_folderpath = f'{hub_folderpath}'
         input_audio_clips_folderpath = f'{video_folderpath}/audio-clips'
-        input_audio_clip_filepath = f'{input_audio_clips_folderpath}/0000.wav'
-        # input_script_lines_filepath = f'{video_folderpath}/script-lines/0000.txt'
+        # input_audio_clip_filepath = f'{input_audio_clips_folderpath}/0000.wav'
         output_folderpath = f'{video_folderpath}/script-timing'
-        output_filepath = f'{output_folderpath}/0000.json'
+        # output_filepath = f'{output_folderpath}/0000.json'
         ###
         try: os.makedirs(output_folderpath)
         except: pass
         if regen: 
             for filename in os.listdir(f'{output_folderpath}'):
                 os.remove(f'{output_folderpath}/{filename}')
-        # with open(input_script_lines_filepath) as f: lines = '\n'.join(f.read().split('\n')[:10])
         ###
-        audio_file = input_audio_clip_filepath
-        ##
         device = "cuda" if torch.cuda.is_available() else "cpu"
         print("Using device:", device)
         model = whisperx.load_model(
@@ -368,32 +374,37 @@ def audio_timing_gen(regen=False):
             compute_type="float32",
             vad_method="silero"
         )
-        result = model.transcribe(audio_file)
-        align_model, metadata = whisperx.load_align_model(
-            language_code=result["language"],
-            device=device
-        )
-        aligned = whisperx.align(
-            result["segments"],
-            align_model,
-            metadata,
-            audio_file,
-            device=device
-        )
-        print("\nWord-level timestamps:\n")
-        output_text = ''
-        words_timestamps = []
-        for w in aligned["word_segments"]:
-            start = w["start"]
-            end = w["end"]
-            word = w["word"]
-            print(f"{start:6.2f}s → {end:6.2f}s  {word}")
-            words_timestamps.append({
-                'word': w['word'].strip(),
-                'start': f"{w['start']:6.2f}".strip(),
-                'end': f"{w['end']:6.2f}".strip(),
-            })
-        io.json_write(output_filepath, words_timestamps)
+        audio_clips_filenames = sorted(os.listdir(input_audio_clips_folderpath))
+        for audio_clip_filename in audio_clips_filenames:
+            audio_clip_filepath = f'{input_audio_clips_folderpath}/{audio_clip_filename}'
+            result = model.transcribe(audio_clip_filepath)
+            align_model, metadata = whisperx.load_align_model(
+                language_code=result["language"],
+                device=device
+            )
+            aligned = whisperx.align(
+                result["segments"],
+                align_model,
+                metadata,
+                audio_clip_filepath,
+                device=device
+            )
+            print("\nWord-level timestamps:\n")
+            output_text = ''
+            words_timestamps = []
+            for w in aligned["word_segments"]:
+                start = w["start"]
+                end = w["end"]
+                word = w["word"]
+                print(f"{start:6.2f}s → {end:6.2f}s  {word}")
+                words_timestamps.append({
+                    'word': w['word'].strip(),
+                    'start': f"{w['start']:6.2f}".strip(),
+                    'end': f"{w['end']:6.2f}".strip(),
+                })
+            audio_clip_filename_base = audio_clip_filename.split('.')[0]
+            output_filepath = f'{output_folderpath}/{audio_clip_filename_base}.json'
+            io.json_write(output_filepath, words_timestamps)
 
 def audio_timing_fix_words_gen(regen=False):
     for idea_i, idea in enumerate(ideas):
@@ -402,10 +413,11 @@ def audio_timing_fix_words_gen(regen=False):
         idea_slug = sluggify(idea)
         ###
         video_folderpath = f'{hub_folderpath}'
-        input_script_timing_filepath = f'{video_folderpath}/script-timing/0000.json'
-        input_script_lines_filepath = f'{video_folderpath}/script-lines/0000.txt'
+        # input_script_timing_filepath = f'{video_folderpath}/script-timing/0000.json'
+        # input_script_lines_filepath = f'{video_folderpath}/script-lines/0000.txt'
+        input_script_timing_folderpath = f'{video_folderpath}/script-timing'
+        input_script_lines_folderpath = f'{video_folderpath}/script-lines'
         output_folderpath = f'{video_folderpath}/script-timing-fix-words'
-        output_filepath = f'{output_folderpath}/0000.json'
         ###
         try: os.makedirs(output_folderpath)
         except: pass
@@ -413,33 +425,91 @@ def audio_timing_fix_words_gen(regen=False):
             for filename in os.listdir(f'{output_folderpath}'):
                 os.remove(f'{output_folderpath}/{filename}')
         ###
-        script_content = io.file_read(input_script_lines_filepath)
-        script_lines = script_content.split('\n')
-        script_words = []
-        for script_line in script_lines:
-            _script_words = script_line.split()
-            for script_word in _script_words:
-                script_words.append(script_word)
-        ###
-        script_timing_data = io.json_read(input_script_timing_filepath)
-        script_timing_data_len = len(script_timing_data)
-        script_words_len = len(script_words)
-        print(script_timing_data_len )
-        print(script_words_len )
-        if script_timing_data_len != script_words_len:
-            print(f'ERR: words not matching in num')
-            # quit()
-        words_fixed = []
-        for item_i, item in enumerate(script_timing_data):
-            word = item['word']
-            start = item['start']
-            end = item['end']
-            if ',' in word and '.' in script_words[item_i]:
-                item['word'] = script_words[item_i]
-                words_fixed.append(item)
-            else:
-                words_fixed.append(item)
-        io.json_write(output_filepath, words_fixed)
+        script_timing_filenames = sorted(os.listdir(input_script_timing_folderpath))
+        script_lines_filenames = sorted(os.listdir(input_script_lines_folderpath))
+        for script_i in range(len(script_timing_filenames)):
+            script_timing_filepath = f'{input_script_timing_folderpath}/{script_timing_filenames[script_i]}'
+            script_lines_filepath = f'{input_script_lines_folderpath}/{script_lines_filenames[script_i]}'
+            print(script_timing_filepath)
+            print(script_lines_filepath)
+            print()
+            ###
+            script_content = io.file_read(script_lines_filepath)
+            script_lines = script_content.split('\n')
+            script_words = []
+            for script_line in script_lines:
+                _script_words = script_line.split()
+                for script_word in _script_words:
+                    script_words.append(script_word)
+            ###
+            script_timing_data = io.json_read(script_timing_filepath)
+            script_timing_data_len = len(script_timing_data)
+            script_words_len = len(script_words)
+            print(script_timing_data_len )
+            print(script_words_len )
+            print()
+            if script_timing_data_len != script_words_len:
+                print(f'ERR: words not matching in num')
+                # quit()
+            ###
+            words_fixed = []
+            for item_i, item in enumerate(script_timing_data):
+                word = item['word']
+                start = item['start']
+                end = item['end']
+                # print(word)
+                # print()
+                if script_timing_data_len == script_words_len:
+                    if ',' in word or '.' in word:
+                        found = False
+                        for script_word in script_words:
+                            if word.lower().strip() == script_word.lower().strip():
+                                found = True
+                                break
+                        if not found:
+                            item['word'] = script_words[item_i]
+                            words_fixed.append(item)
+                        else:
+                            words_fixed.append(item)
+                    else:
+                        words_fixed.append(item)
+                else:
+                    if script_timing_data_len < script_words_len:
+                        if ',' in word or '.' in word:
+                            found = False
+                            for script_word in script_words:
+                                if word.lower().strip() == script_word.lower().strip():
+                                    found = True
+                                    break
+                            if not found:
+                                item['word'] = item['word'].replace(',', '.')
+                                words_fixed.append(item)
+                            else:
+                                words_fixed.append(item)
+                        else:
+                            words_fixed.append(item)
+                    else:
+                        if ',' in word or '.' in word:
+                            found = False
+                            for script_word in script_words:
+                                if word.lower().strip() == script_word.lower().strip():
+                                    found = True
+                                    break
+                            if not found:
+                                item['word'] = script_words[item_i]
+                                words_fixed.append(item)
+                            else:
+                                words_fixed.append(item)
+                        else:
+                            words_fixed.append(item)
+            if script_i == 3:
+                # for x in words_fixed:
+                    # print(x)
+                pass
+                # quit()
+            filename_base = script_timing_filenames[script_i].split('.')[0]
+            output_filepath = f'{output_folderpath}/{filename_base}.json'
+            io.json_write(output_filepath, words_fixed)
 
 def audio_timing_sentences_gen(regen=False):
     for idea_i, idea in enumerate(ideas):
@@ -448,9 +518,8 @@ def audio_timing_sentences_gen(regen=False):
         idea_slug = sluggify(idea)
         ###
         video_folderpath = f'{hub_folderpath}'
-        input_script_timing_fix_words_filepath = f'{video_folderpath}/script-timing-fix-words/0000.json'
+        input_script_timing_fix_words_folderpath = f'{video_folderpath}/script-timing-fix-words'
         output_folderpath = f'{video_folderpath}/script-timing-sentences'
-        output_filepath = f'{output_folderpath}/0000.txt'
         ###
         try: os.makedirs(output_folderpath)
         except: pass
@@ -458,33 +527,39 @@ def audio_timing_sentences_gen(regen=False):
             for filename in os.listdir(f'{output_folderpath}'):
                 os.remove(f'{output_folderpath}/{filename}')
         ###
-        durations = []
-        start_cur = 0
-        end_cur = 0
-        update_start = False
-        script_timing_fix_words_data = io.json_read(input_script_timing_fix_words_filepath)
-        i = 0
-        for _ in range(len(script_timing_fix_words_data)):
-            word = script_timing_fix_words_data[i]['word'].strip()
-            start = float(script_timing_fix_words_data[i]['start'].strip())
-            end = float(script_timing_fix_words_data[i]['end'].strip())
-            if word.endswith('.') or word.endswith('?'):
-                end_cur = end
-                duration = end_cur - start_cur
-                # start_cur = start
-                if 1:
-                    try: 
-                        start_next = float(script_timing_fix_words_data[i+1]['start'].strip())
-                        start_cur = (start_next + start)/2
-                    except: 
-                        pass
-                duration = f'{duration:6.2f}'.strip()
-                durations.append(duration)
-            i += 1
-        durations = '\n'.join(durations)
-        io.file_write(output_filepath, durations)
+        script_timing_fix_words_filenames = sorted(os.listdir(input_script_timing_fix_words_folderpath))
+        for script_i in range(len(script_timing_fix_words_filenames)):
+            script_timing_fix_words_filepath = f'{input_script_timing_fix_words_folderpath}/{script_timing_fix_words_filenames[script_i]}'
+            ###
+            durations = []
+            start_cur = 0
+            end_cur = 0
+            update_start = False
+            script_timing_fix_words_data = io.json_read(script_timing_fix_words_filepath)
+            i = 0
+            for _ in range(len(script_timing_fix_words_data)):
+                word = script_timing_fix_words_data[i]['word'].strip()
+                start = float(script_timing_fix_words_data[i]['start'].strip())
+                end = float(script_timing_fix_words_data[i]['end'].strip())
+                if word.endswith('.') or word.endswith('?'):
+                    end_cur = end
+                    duration = end_cur - start_cur
+                    # start_cur = start
+                    if 1:
+                        try: 
+                            start_next = float(script_timing_fix_words_data[i+1]['start'].strip())
+                            start_cur = (start_next + start)/2
+                        except: 
+                            pass
+                    duration = f'{duration:6.2f}'.strip()
+                    durations.append(duration)
+                i += 1
+            durations = '\n'.join(durations)
+            filename_base = script_timing_fix_words_filenames[script_i].split('.')[0]
+            output_filepath = f'{output_folderpath}/{filename_base}.txt'
+            io.file_write(output_filepath, durations)
 
-def slideshow_gen(regen=False):
+def slideshows_gen(regen=False):
     for idea_i, idea in enumerate(ideas):
         # if idea_i < ideas_num_min or idea_i > ideas_num_max: continue
         i_str = index_to_string(idea_i)
@@ -493,10 +568,9 @@ def slideshow_gen(regen=False):
         video_folderpath = f'{hub_folderpath}'
         # input_script_filepath = f'{video_folderpath}/script.txt'
         input_images_folderpath = f'{video_folderpath}/images'
-        input_audio_clip_filepath = f'{video_folderpath}/audio-clips/0000.wav'
-        input_script_timing_sentences_filepath = f'{video_folderpath}/script-timing-sentences/0000.txt'
-        output_folderpath = f'{video_folderpath}/slideshow'
-        output_filepath = f'{output_folderpath}/0000.mp4'
+        input_audio_clips_folderpath = f'{video_folderpath}/audio-clips'
+        input_script_timing_sentences_folderpath = f'{video_folderpath}/script-timing-sentences'
+        output_folderpath = f'{video_folderpath}/slideshows'
         concat_filepath = f'{video_folderpath}/concat.txt'
         ###
         try: os.makedirs(output_folderpath)
@@ -505,78 +579,138 @@ def slideshow_gen(regen=False):
             for filename in os.listdir(f'{output_folderpath}'):
                 os.remove(f'{output_folderpath}/{filename}')
         ###
-        durations = io.file_read(input_script_timing_sentences_filepath).split('\n')
-        images_filenames = sorted(os.listdir(input_images_folderpath))
-        slides = []
-        for i in range(len(durations)):
-            slides.append((f"{input_images_folderpath}/{images_filenames[i]}", durations[i]))
-
-        HUGE_DURATION = 10 * 60 * 60  # 10 hours (effectively infinite)
-
-        ffmpeg_cmd = ["ffmpeg", "-y"]
-
-        for i, (image_path, duration) in enumerate(slides):
-            if i == len(slides) - 1:
-                duration = HUGE_DURATION   # extend last image
+        script_timing_sentences_filenames = sorted(os.listdir(input_script_timing_sentences_folderpath))
+        audio_clips_filenames = sorted(os.listdir(input_audio_clips_folderpath))
+        images_foldernames = sorted(os.listdir(input_images_folderpath))
+        for script_i in range(len(script_timing_sentences_filenames)):
+            filename_base = script_timing_sentences_filenames[script_i].split('.')[0]
+            script_timing_sentences_filepath = f'{input_script_timing_sentences_folderpath}/{script_timing_sentences_filenames[script_i]}'
+            audio_clip_filepath = f'{input_audio_clips_folderpath}/{audio_clips_filenames[script_i]}'
+            images_folderpath = f'{input_images_folderpath}/{images_foldernames[script_i]}'
+            print(script_timing_sentences_filepath) 
+            print(audio_clip_filepath) 
+            print(images_folderpath) 
+            ###
+            durations = io.file_read(script_timing_sentences_filepath).split('\n')
+            images_filenames = sorted(os.listdir(images_folderpath))
+            print(durations)
+            print(images_filenames)
+            slides = []
+            for i in range(len(durations)):
+                slides.append((f"{images_folderpath}/{images_filenames[i]}", durations[i]))
+            HUGE_DURATION = 10 * 60 * 60  # 10 hours (effectively infinite)
+            ffmpeg_cmd = ["ffmpeg", "-y"]
+            for i, (image_path, duration) in enumerate(slides):
+                if i == len(slides) - 1:
+                    duration = HUGE_DURATION   # extend last image
+                ffmpeg_cmd.extend([
+                    "-loop", "1",
+                    "-t", str(duration),
+                    "-i", image_path,
+                ])
+            # 2. Add audio
             ffmpeg_cmd.extend([
-                "-loop", "1",
-                "-t", str(duration),
-                "-i", image_path,
+                "-i", audio_clip_filepath,
             ])
+            # 3. Build filter_complex concat string
+            video_inputs = "".join(f"[{i}:v]" for i in range(len(slides)))
+            filter_complex = f"{video_inputs}concat=n={len(slides)}:v=1:a=0"
+            # 4. Finish command
+            output_filepath = f'{output_folderpath}/{filename_base}.mp4'
+            ffmpeg_cmd.extend([
+                "-filter_complex", filter_complex,
+                "-pix_fmt", "yuv420p",
+                "-c:v", "libx264",
+                "-shortest",
+                output_filepath,
+            ])
+            # 5. Run
+            subprocess.run(ffmpeg_cmd, check=True)
 
-        # 2. Add audio
-        ffmpeg_cmd.extend([
-            "-i", input_audio_clip_filepath,
-        ])
+def script_paragraphs_gen(regen=False):
+    for idea_i, idea in enumerate(ideas):
+        # if idea_i < ideas_num_min or idea_i > ideas_num_max: continue
+        i_str = index_to_string(idea_i)
+        idea_slug = sluggify(idea)
+        ###
+        video_folderpath = f'{hub_folderpath}'
+        input_script_filepath = f'{video_folderpath}/script-formatted/0000.txt'
+        output_folderpath = f'{video_folderpath}/script-paragraphs'
+        ###
+        try: os.makedirs(output_folderpath)
+        except: pass
+        if regen: 
+            for filename in os.listdir(f'{output_folderpath}'):
+                os.remove(f'{output_folderpath}/{filename}')
+        ###
+        content = io.file_read(input_script_filepath)
+        paragraphs = []
+        for paragraph in content.split('\n'):
+            paragraph = paragraph.strip()
+            if paragraph == '': continue
+            paragraphs.append(paragraph)
+        for paragraph_i, paragraph in enumerate(paragraphs):
+            paragraph_i_str = index_to_string(paragraph_i)
+            output_filepath = f'{output_folderpath}/{paragraph_i_str}.txt'
+            io.file_write(output_filepath, paragraph)
 
-        # 3. Build filter_complex concat string
-        video_inputs = "".join(f"[{i}:v]" for i in range(len(slides)))
-        filter_complex = f"{video_inputs}concat=n={len(slides)}:v=1:a=0"
+def script_formatted_gen(regen=False):
+    for idea_i, idea in enumerate(ideas):
+        # if idea_i < ideas_num_min or idea_i > ideas_num_max: continue
+        i_str = index_to_string(idea_i)
+        idea_slug = sluggify(idea)
+        ###
+        video_folderpath = f'{hub_folderpath}'
+        input_script_filepath = f'{video_folderpath}/script.txt'
+        output_folderpath = f'{video_folderpath}/script-formatted'
+        output_filepath = f'{output_folderpath}/0000.txt'
+        ###
+        try: os.makedirs(output_folderpath)
+        except: pass
+        if regen: 
+            for filename in os.listdir(f'{output_folderpath}'):
+                os.remove(f'{output_folderpath}/{filename}')
+        ###
+        text = io.file_read(input_script_filepath)
+        text = text.replace('’', "'")
+        text = text.replace('”', '"')
+        text = text.replace('“', '"')
+        text = text.replace('—', ', ')
+        text = text.replace('…', ',')
+        text = text.replace('."', '".')
+        io.file_write(output_filepath, text)
 
-        # 4. Finish command
-        ffmpeg_cmd.extend([
-            "-filter_complex", filter_complex,
-            "-pix_fmt", "yuv420p",
-            "-c:v", "libx264",
-            "-shortest",
-            output_filepath,
-        ])
-
-        # 5. Run
-        subprocess.run(ffmpeg_cmd, check=True)
-
-
-'''
-ffmpeg -f concat -safe 0 -i slideshow.txt \
-       -i audio.mp3 \
-       -vsync vfr \
-       -pix_fmt yuv420p \
-       -c:v libx264 \
-       -shortest \
-       output.mp4
-'''
-
-
+### script
 if 0:
-    ### script
-    # script_lines(regen=True)
+    script_formatted_gen(regen=True)
+    script_paragraphs_gen(regen=True)
+    script_lines_gen(regen=True)
     script_lines_images(regen=True)
     quit()
 
+### audio
 if 0:
-    # images_gen_test()
-    images_gen(regen=True)
-    quit()
-
-if 1:
     # audio_clips_gen(regen=True)
+    # audio_full_gen(regen=False)
+    quit()
+    pass
+
+### timing
+if 1:
     # audio_timing_gen(regen=True)
     # audio_timing_fix_words_gen(regen=True)
-    audio_timing_sentences_gen(regen=True)
-    # audio_full_gen(regen=False)
+    # audio_timing_sentences_gen(regen=True)
     # quit()
+    pass
+
+if 0:
+    # images_gen_test()
+    # images_gen(regen=True)
+    quit()
+    pass
 
 if 1:
-    slideshow_gen(regen=True)
+    # slideshows_gen(regen=True)
     # video_clips_gen(regen=True)
-    # video_full_gen(regen=True)
+    slideshow_full_gen(regen=True)
+    pass
